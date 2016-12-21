@@ -6,6 +6,11 @@ var app = express();
 
 var credentials = require('./credentials.js');
 
+// get mail transport
+var nodemailer = require('nodemailer');
+var sgTransport = require('nodemailer-sendgrid-transport');
+var mailer = nodemailer.createTransport(sgTransport(credentials.sendGridUserLogin));
+
 // set up handlebars view engine
 var handlebars = require('express-handlebars').create({
     defaultLayout:'main',
@@ -85,6 +90,26 @@ app.use(function(req, res, next){
 
 app.get('/', function(req, res) {
 	res.render('home');
+});
+
+app.get('/sendmail', function(req,res) {
+    var email = {
+        to: ['ftp60@ya.ru', 'isordos@gmail.com'],
+        from: 'mail@nebesa.me',
+        subject: 'Hi there',
+        text: 'Awesome sauce',
+        html: '<b>Awesome sauce</b>'
+    };
+
+    mailer.sendMail(email, function(err, res) {
+        if (err) { 
+            console.log(err) 
+        }
+        console.log(res);
+    });
+    
+    return res.redirect(303, '/about');
+    
 });
 app.get('/about', function(req,res){
 	res.render('about', { 
