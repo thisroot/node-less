@@ -1,0 +1,13 @@
+db.createUser({
+    "user": "root",
+    "pwd": "V9h6XbD8bvEB",
+    "roles": [{"role": "root", "db": "admin"}]
+});
+
+db.createUser({
+    "user": "lession",
+    "pwd": "V9h6XbD8bvEB",
+    "roles": [{"role": "readWrite", "db": "node-lession"}]
+});
+
+db.addUser({ user: "lession", pwd: "V9h6XbD8bvEB", roles: ["readWrite"] })
