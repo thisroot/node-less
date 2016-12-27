@@ -3,6 +3,7 @@ var http = require('http'),
 	fortune = require('./lib/fortune.js'),
 	formidable = require('formidable'),
 	fs = require('fs'),
+        vhost = require('vhost'),
 	Vacation = require('./models/vacation.js'),
 	VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
 
@@ -96,7 +97,6 @@ app.use(session({
     secret: credentials.cookieSecret,
     store: new MongoStore({ url: credentials.mongo[app.get('env')].connectionString })
 }));
-
 app.use(express.static(__dirname + '/public'));
 app.use(require('body-parser')());
 
@@ -215,6 +215,7 @@ function getWeatherData(){
 
 // middleware to add weather data to context
 app.use(function(req, res, next){
+        //console.log(req.get('host'));
 	if(!res.locals.partials) res.locals.partials = {};
  	res.locals.partials.weatherContext = getWeatherData();
  	next();
@@ -224,7 +225,7 @@ app.use(function(req, res, next){
 // create "admin" subdomain...this should appear
 // before all your other routes
 var admin = express.Router();
-app.use(require('vhost')('admin.*', admin));
+app.use(require('vhost')('admin.less.nebesa.me', admin));
 
 // create admin routes; these can be defined anywhere
 admin.get('/', function(req, res){
@@ -236,6 +237,74 @@ admin.get('/users', function(req, res){
 
 // add routes
 require('./routes.js')(app);
+
+
+// Create the API middleware & routes
+const Attraction = require('./models/attraction.js');
+
+const apiOptions = {
+  context: '',
+  domain: require('domain').create()
+};
+
+const rest = require('connect-rest').create( apiOptions );
+
+apiOptions.domain.on('error', function(err){
+    console.log('API domain error.\n', err.stack);
+    setTimeout(function(){
+        console.log('Server shutting down after API domain error.');
+        process.exit(1);
+    }, 5000);
+    server.close();
+    var worker = require('cluster').worker;
+    if(worker) worker.disconnect();
+});
+
+app.use('/api', require('cors')());
+// link API into pipeline and adds connect-rest middleware to connect 
+app.use(vhost('api.less.nebesa.me', rest.processRequest()));
+
+rest.get('/attractions', function(req, content, cb){
+    Attraction.find({ approved: true }, function(err, attractions){
+        if(err) return cb({ error: 'Internal error.' });
+        cb(null, attractions.map(function(a){
+            return {
+                name: a.name,
+                description: a.description,
+                location: a.location,
+            };
+        }));
+    });
+});
+
+rest.post('/attraction', function(req, content, cb){
+    var a = new Attraction({
+        name: req.body.name,
+        description: req.body.description,
+        location: { lat: req.body.lat, lng: req.body.lng },
+        history: {
+            event: 'created',
+            email: req.body.email,
+            date: new Date(),
+        },
+        approved: false,
+    });
+    a.save(function(err, a){
+        if(err) return cb({ error: 'Unable to add attraction.' });
+        cb(null, { id: a._id });
+    }); 
+});
+
+rest.get('/attraction/:id', function(req, content, cb){
+    Attraction.findById(req.params.id, function(err, a){
+        if(err) return cb({ error: 'Unable to retrieve attraction.' });
+        cb(null, { 
+            name: a.name,
+            description: a.description,
+            location: a.location,
+        });
+    });
+});
 
 // add support for auto views
 var autoViews = {};

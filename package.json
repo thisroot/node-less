@@ -5,7 +5,8 @@
   "main": "meadowlark.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "run": "nodemon meadowlark.js"
+    "run": "nodemon meadowlark.js",
+    "testapi": "mocha -u tdd -R spec qa/tests-api.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
     "body-parser": "^1.15.2",
     "chai": "~1.9.1",
     "connect": "^3.5.0",
+    "connect-rest": "^2.10.7",
     "cookie-parser": "^1.4.3",
     "cookie-session": "^2.0.0-alpha.2",
     "cors": "^2.8.1",
@@ -44,6 +46,7 @@
     "grunt-contrib-jshint": "^0.10.0",
     "grunt-exec": "^0.4.5",
     "mocha": "~1.20.1",
+    "restler": "^3.4.0",
     "zombie": "~2.0.0-alpha31"
   }
 }
