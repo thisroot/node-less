@@ -8,9 +8,7 @@ var http = require('http'),
 	VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
 
 var app = express();
-
 var credentials = require('./credentials.js');
-
 var emailService = require('./lib/email.js')(credentials);
 
 // set up handlebars view engine
@@ -21,11 +19,18 @@ var handlebars = require('express3-handlebars').create({
             if(!this._sections) this._sections = {};
             this._sections[name] = options.fn(this);
             return null;
+        },
+        static: function(name) {
+            return require('./lib/static.js').map(name);
         }
     }
 });
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
+
+// set up css/js bundling
+var bundler = require('connect-bundle')(require('./config.js'));
+app.use(bundler);
 
 app.set('port', process.env.PORT || 8181);
 
@@ -215,12 +220,27 @@ function getWeatherData(){
 
 // middleware to add weather data to context
 app.use(function(req, res, next){
-        //console.log(req.get('host'));
 	if(!res.locals.partials) res.locals.partials = {};
  	res.locals.partials.weatherContext = getWeatherData();
  	next();
 });
 
+// middleware to handle logo image easter eggs
+var static = require('./lib/static.js').map;
+app.use(function(req, res, next){
+	var now = new Date();
+	res.locals.logoImage = now.getMonth()==11 && now.getDate()==19 ?
+	static('/img/logo_bud_clark.png') :
+	static('/img/logo.png');
+	next();
+});
+
+// middleware to provide cart data for header
+app.use(function(req, res, next) {
+	var cart = req.session.cart;
+	res.locals.cartItems = cart && cart.items ? cart.items.length : 0;
+	next();
+});
 
 // create "admin" subdomain...this should appear
 // before all your other routes
