@@ -120,3 +120,8 @@ module.exports = function(grunt){
 	grunt.registerTask('default', ['cafemocha','jshint','exec', 'lint_pattern']);
 	grunt.registerTask('static', ['less', 'cssmin', 'uglify', 'hashres']);
 };
+
+/*
+ * examples "grunt static" => grunt.registerTask('static', ['less', 'cssmin', 'uglify', 'hashres'])
+ *          "grunt less" => run less
+ */
